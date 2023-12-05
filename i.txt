@@ -1,0 +1,54 @@
+Create me a new shell script, that will do the following:
+
+1. update all packages no cache with alpine linux
+2. install git
+3. create /app directory
+4. clone https://github.com/repasscloud/lvpnportal.git into the app directory (structure will be /app/lvpnportal)
+5. create folder /app/caddy
+6. create this file /app/caddy/Caddyfile
+7. put this content into /app/caddy/Caddyfile:
+http://uat-portal.lunavpn.co {
+    redir https://uat-portal.lunavpn.co{uri}
+}
+
+https://uat-portal.lunavpn.co {
+    reverse_proxy lvpnportal:80
+    tls danijel@repasscloud.com
+}
+8. test if exists docker-compose.yml file, if it does exist, delete
+9. create docker-compose file like this (update as required):
+version: '3.8'
+
+services:
+  lvpnportal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lvpnportal:dev
+    container_name: lvpnportal
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - lvpn_network
+
+  caddy:
+    image: caddy:latest
+    depends_on:
+      - lvpnportal
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - lvpn_network
+    volumes:
+      - ./etc/Caddyfile:/etc/caddy/Caddyfile
+
+networks:
+  lvpn_network:
+    driver: bridge
+
+
+Note: the Dockerfile for the lvpnportal is located at /app/lvpnportal/Dockerfile
